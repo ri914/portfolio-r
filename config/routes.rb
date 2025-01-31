@@ -1,4 +1,8 @@
 Rails.application.routes.draw do
-  devise_for :users
-  get 'home/top'
+  root 'home#top'
+  devise_for :users, controllers: { registrations: 'users/registrations', sessions: 'users/sessions' }
+
+  devise_scope :user do
+    get 'guest_login', to: 'users/sessions#guest_login'
+  end
 end

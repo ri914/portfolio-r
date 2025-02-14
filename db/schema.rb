@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_02_01_000623) do
+ActiveRecord::Schema[7.1].define(version: 2025_02_14_052319) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -55,8 +55,17 @@ ActiveRecord::Schema[7.1].define(version: 2025_02_01_000623) do
     t.integer "saved_by_user_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "image_descriptions"
+    t.string "image_description"
     t.index ["saved_by_user_id"], name: "index_onsens_on_saved_by_user_id"
     t.index ["user_id"], name: "index_onsens_on_user_id"
+  end
+
+  create_table "onsens_water_qualities", id: false, force: :cascade do |t|
+    t.bigint "onsen_id", null: false
+    t.bigint "water_quality_id", null: false
+    t.index ["onsen_id"], name: "index_onsens_water_qualities_on_onsen_id"
+    t.index ["water_quality_id"], name: "index_onsens_water_qualities_on_water_quality_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -71,6 +80,12 @@ ActiveRecord::Schema[7.1].define(version: 2025_02_01_000623) do
     t.string "avatar"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
+  end
+
+  create_table "water_qualities", force: :cascade do |t|
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"

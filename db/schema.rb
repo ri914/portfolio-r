@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_02_15_091359) do
+ActiveRecord::Schema[7.1].define(version: 2025_02_19_035229) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -74,6 +74,15 @@ ActiveRecord::Schema[7.1].define(version: 2025_02_15_091359) do
     t.index ["water_quality_id"], name: "index_onsens_water_qualities_on_water_quality_id"
   end
 
+  create_table "saved_onsens", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "onsen_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["onsen_id"], name: "index_saved_onsens_on_onsen_id"
+    t.index ["user_id"], name: "index_saved_onsens_on_user_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
@@ -98,4 +107,6 @@ ActiveRecord::Schema[7.1].define(version: 2025_02_15_091359) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "image_descriptions", "onsens"
   add_foreign_key "onsens", "users"
+  add_foreign_key "saved_onsens", "onsens"
+  add_foreign_key "saved_onsens", "users"
 end

@@ -190,7 +190,7 @@ class OnsensController < ApplicationController
   def search_with_details
     @keyword = params[:keyword]
     @location = params[:location]
-    @water_quality_ids = params[:water_quality_ids].reject(&:blank?)
+    @water_quality_ids = params[:water_quality_ids].compact_blank
 
     @onsens = Onsen.all
 

@@ -97,17 +97,8 @@ class OnsensController < ApplicationController
       return
     end
 
-    remove_image_ids = params[:onsen][:remove_image_ids].compact_blank if params[:onsen][:remove_image_ids].present?
-
     new_images = params[:onsen][:images].compact_blank if params[:onsen][:images].present?
     new_descriptions = params[:onsen][:new_descriptions].compact_blank if params[:onsen][:new_descriptions].present?
-
-    if remove_image_ids.present?
-      remove_image_ids.each do |remove_id|
-        image = @onsen.images.find_by(id: remove_id)
-        image.purge if image.present?
-      end
-    end
 
     if @onsen.update(onsen_params.except(:images, :image_descriptions, :remove_image_ids))
       if new_images.present?
@@ -242,7 +233,6 @@ class OnsensController < ApplicationController
       :location,
       water_quality_ids: [],
       images: [],
-
     )
   end
 end

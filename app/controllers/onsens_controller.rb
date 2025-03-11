@@ -47,6 +47,7 @@ class OnsensController < ApplicationController
   def edit
     @onsen = Onsen.find(params[:id])
     @page_title = "温泉情報設定"
+    @new_images = params[:onsen] ? params[:onsen][:images] : []
   end
 
   def create
@@ -90,18 +91,36 @@ class OnsensController < ApplicationController
     @onsen = current_user.onsens.find(params[:id])
 
     existing_onsen = Onsen.where.not(id: @onsen.id).find_by(name: onsen_params[:name], location: onsen_params[:location])
-
     if existing_onsen
       @error_message = I18n.t('alerts.onsen_already_exists')
       render :edit
       return
     end
 
-    if @onsen.update(onsen_params)
-      if params[:onsen][:new_descriptions].present?
-        params[:onsen][:new_descriptions].each_with_index do |description, index|
-          if @onsen.images.attached? && index < @onsen.images.count
-            @onsen.image_descriptions.create(description: description)
+    remove_image_ids = params[:onsen][:remove_image_ids].compact_blank if params[:onsen][:remove_image_ids].present?
+
+    new_images = params[:onsen][:images].compact_blank if params[:onsen][:images].present?
+    new_descriptions = params[:onsen][:new_descriptions].compact_blank if params[:onsen][:new_descriptions].present?
+
+    if remove_image_ids.present?
+      remove_image_ids.each do |remove_id|
+        image = @onsen.images.find_by(id: remove_id)
+        image.purge if image.present?
+      end
+    end
+
+    if @onsen.update(onsen_params.except(:images, :image_descriptions, :remove_image_ids))
+      if new_images.present?
+        @onsen.images.destroy_all
+        @onsen.images.attach(new_images)
+
+        if new_descriptions.present?
+          @onsen.image_descriptions.destroy_all
+
+          new_descriptions.each_with_index do |description, index|
+            if @onsen.images.attached? && index < @onsen.images.count
+              @onsen.image_descriptions.create(description: description)
+            end
           end
         end
       end
@@ -218,6 +237,12 @@ class OnsensController < ApplicationController
   end
 
   def onsen_params
-    params.require(:onsen).permit(:name, :location, :description, images: [], water_quality_ids: [])
+    params.require(:onsen).permit(
+      :name,
+      :location,
+      water_quality_ids: [],
+      images: [],
+
+    )
   end
 end

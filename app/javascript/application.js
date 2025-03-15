@@ -230,3 +230,9 @@ $(document).ready(function() {
     }
   });
 });
+
+$(document).ready(function () {
+  $("#sort-select").change(function () {
+    window.location.href = $(this).val();
+  });
+});

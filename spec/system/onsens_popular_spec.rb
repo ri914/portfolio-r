@@ -43,4 +43,22 @@ RSpec.describe 'Onsen Features', type: :system do
       expect(page.body.index("🥈")).to be < page.body.index("🥉")
     end
   end
+
+  describe '一覧ページの並び替え機能' do
+    before do
+      onsen1.saved_onsens.create(user: user)
+      visit onsens_path
+    end
+
+    it 'デフォルトで都道府県順に並んでいること' do
+      expect(page.body.index(onsen2.name)).to be < page.body.index(onsen1.name)
+      expect(page.body.index(onsen3.name)).to be < page.body.index(onsen1.name)
+    end
+
+    it 'ドロップダウンで人気順に変更できること', js: true do
+      select '人気順', from: 'sort-select'
+      expect(page).to have_current_path(onsens_path(sort: 'bookmarks'))
+      expect(page.body.index(onsen1.name)).to be < page.body.index(onsen2.name)
+    end
+  end
 end

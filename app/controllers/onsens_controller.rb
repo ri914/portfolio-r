@@ -1,13 +1,25 @@
 class OnsensController < ApplicationController
   before_action :authenticate_user!
   before_action :check_guest_user, only: [:new, :create, :edit, :update, :destroy]
+  before_action :transfer_guest_bookmarks, only: [:bookmarked, :bookmark], if: :user_signed_in?
 
   def index
-    @onsens = Onsen.all.sort_by do |onsen|
-      [
-        Onsen.region_order[onsen.region],
-        Onsen.prefecture_order[onsen.location],
-      ]
+    if params[:sort] == "bookmarks"
+      location_order_sql = Onsen.prefecture_order.map { |pref, order| "WHEN '#{pref}' THEN #{order}" }.join(' ')
+
+      @onsens = Onsen.
+        left_joins(:saved_onsens).
+        group('onsens.id').
+        select('onsens.*, COUNT(saved_onsens.id) AS bookmarks_count').
+        order(Arel.sql("COUNT(saved_onsens.id) DESC, CASE onsens.location #{location_order_sql} ELSE 999 END, onsens.id ASC")).
+        limit(10)
+    else
+      @onsens = Onsen.all.sort_by do |onsen|
+        [
+          Onsen.region_order[onsen.region],
+          Onsen.prefecture_order[onsen.location],
+        ]
+      end
     end
 
     @current_region = 'トップ'
@@ -16,18 +28,38 @@ class OnsensController < ApplicationController
 
   def region
     @region = params[:region]
-    @onsens = Onsen.where(location: Onsen.region_locations(@region)).sort_by do |onsen|
-      Onsen.prefecture_order[onsen.location]
-    end
-
     @current_region = @region
     @prefectures = Onsen.region_locations(@region)
+
+    if params[:sort] == "bookmarks"
+      location_order_sql = Onsen.prefecture_order.map { |pref, order| "WHEN '#{pref}' THEN #{order}" }.join(' ')
+
+      @onsens = Onsen.where(location: @prefectures).
+        left_joins(:saved_onsens).
+        group('onsens.id').
+        select('onsens.*, COUNT(saved_onsens.id) AS bookmarks_count').
+        order(Arel.sql("COUNT(saved_onsens.id) DESC, CASE onsens.location #{location_order_sql} ELSE 999 END, onsens.id ASC"))
+    else
+      @onsens = Onsen.where(location: @prefectures).sort_by do |onsen|
+        Onsen.prefecture_order[onsen.location]
+      end
+    end
     @page_title = "#{@region}の温泉"
   end
 
   def prefecture
     @prefecture = params[:prefecture]
     @onsens = Onsen.where(location: @prefecture)
+
+    if params[:sort] == "bookmarks"
+      @onsens = Onsen.where(location: @prefecture).
+        left_joins(:saved_onsens).
+        group('onsens.id').
+        select('onsens.*, COUNT(saved_onsens.id) AS bookmarks_count').
+        order(Arel.sql("COUNT(saved_onsens.id) DESC, onsens.id ASC"))
+    else
+      @onsens = Onsen.where(location: @prefecture).order(:id)
+    end
     @page_title = "#{@prefecture}の温泉"
   end
 
@@ -100,13 +132,13 @@ class OnsensController < ApplicationController
     new_images = params[:onsen][:images].compact_blank if params[:onsen][:images].present?
     new_descriptions = params[:onsen][:new_descriptions].compact_blank if params[:onsen][:new_descriptions].present?
 
-    if @onsen.update(onsen_params.except(:images, :image_descriptions, :remove_image_ids))
+    if @onsen.update(onsen_params.except(:images, :image_descriptions))
       if new_images.present?
         @onsen.images.destroy_all
+        @onsen.image_descriptions.destroy_all
         @onsen.images.attach(new_images)
 
         if new_descriptions.present?
-          @onsen.image_descriptions.destroy_all
 
           new_descriptions.each_with_index do |description, index|
             if @onsen.images.attached? && index < @onsen.images.count
@@ -135,21 +167,30 @@ class OnsensController < ApplicationController
       saved = false
     end
 
+    bookmarked_count = @onsen.saved_onsens.count
+
     respond_to do |format|
-      format.json { render json: { saved: saved } }
+      format.json { render json: { saved: saved, bookmarked_count: bookmarked_count } }
       format.html { redirect_to onsens_path }
     end
   end
 
   def bookmarked
-    @onsens = current_user.saved_onsens.includes(:onsen).map(&:onsen).sort_by do |onsen|
-      [
-        Onsen.region_order[onsen.region],
-        Onsen.prefecture_order[onsen.location],
-      ]
-    end
-
     @page_title = "保存済みの温泉"
+
+    if params[:sort] == "bookmarks"
+      @onsens = current_user.saved_onsens.
+        includes(:onsen).
+        map(&:onsen).
+        sort_by { |onsen| -onsen.saved_onsens.count }
+    else
+      @onsens = current_user.saved_onsens.
+        includes(:onsen).
+        map(&:onsen).
+        sort_by do |onsen|
+        [Onsen.region_order[onsen.region], Onsen.prefecture_order[onsen.location]]
+      end
+    end
   end
 
   def destroy
@@ -223,8 +264,28 @@ class OnsensController < ApplicationController
   def check_guest_user
     if current_user.guest?
       flash[:alert] = I18n.t('alerts.guest_user')
-      redirect_back(fallback_location: home_index_path)
+
+      if request.get?
+        redirect_back(fallback_location: home_index_path)
+      else
+        redirect_to onsens_path
+      end
     end
+  end
+
+  def transfer_guest_bookmarks
+    return if session[:bookmarked_onsens].blank?
+
+    onsen_ids = session[:bookmarked_onsens].compact.uniq
+
+    existing_onsen_ids = SavedOnsen.where(user: current_user, onsen_id: onsen_ids).pluck(:onsen_id)
+    new_onsen_ids = onsen_ids - existing_onsen_ids
+
+    new_onsen_ids.each do |onsen_id|
+      SavedOnsen.create(user: current_user, onsen_id: onsen_id)
+    end
+
+    session.delete(:bookmarked_onsens)
   end
 
   def onsen_params
@@ -233,6 +294,7 @@ class OnsensController < ApplicationController
       :location,
       water_quality_ids: [],
       images: [],
+      image_descriptions: []
     )
   end
 end

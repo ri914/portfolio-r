@@ -156,8 +156,6 @@ $(document).ready(function() {
       },
       success: function(data) {
         const button = $(`#bookmark-button-${onsenId}`);
-        const countElement = $(`#count-${onsenId}`);
-
         if (data.saved) {
           button.addClass('saved');
           button.find('i').removeClass('fa-bookmark-o').addClass('fa-bookmark');
@@ -165,8 +163,6 @@ $(document).ready(function() {
           button.removeClass('saved');
           button.find('i').removeClass('fa-bookmark').addClass('fa-bookmark-o');
         }
-
-        countElement.text(data.bookmarked_count);
       },
       error: function(error) {
         console.error('Error:', error);
@@ -175,64 +171,10 @@ $(document).ready(function() {
   });
 });
 
-
 $(document).ready(function() {
   $('.delete-onsen-btn').on('click', function(event) {
     if (!confirm('この温泉を削除しますか？')) {
       event.preventDefault();
     }
-  });
-});
-
-
-$(document).ready(function() {
-  $('.btn-primary, .search-button').on('click', function(event) {
-    var keyword = $('.search-input').val().trim();
-
-    if (keyword === '') {
-      event.preventDefault();
-      alert('キーワードを入力してください。');
-    }
-  });
-});
-
-$(document).ready(function() {
-  const searchBtn = $('#search-btn');
-  const guestLoginLink = $('#guest-login-link');
-
-  if (searchBtn.length) {
-    searchBtn.on('click', function(e) {
-      const isGuest = searchBtn.data('guest') === false;
-      const keyword = $('#search-keyword').val().trim();
-
-      if (isGuest && keyword !== '') {
-        e.preventDefault();
-        const url = `/guest_login?keyword=${encodeURIComponent(keyword)}`;
-        window.location.href = url;
-      }
-    });
-  }
-});
-
-$(document).ready(function() {
-  $('#detail-search-form').on('submit', function(e) {
-    var keyword = $('#detail-search-form input[name="keyword"]').val().trim();
-    var location = $('select[name="location"]').val(); 
-    var waterQualityIds = $('input[name="water_quality_ids[]"]:checked').length;
-
-    console.log("Keyword:", keyword);
-    console.log("Location:", location);
-    console.log("Water Quality IDs:", waterQualityIds);
-
-    if (keyword === '' && (!location || location === '選択してください') && waterQualityIds === 0) {
-      e.preventDefault();
-      alert('キーワード、都道府県、または泉質のいずれかを入力してください。');
-    }
-  });
-});
-
-$(document).ready(function () {
-  $("#sort-select").change(function () {
-    window.location.href = $(this).val();
   });
 });

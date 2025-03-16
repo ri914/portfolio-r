@@ -11,15 +11,8 @@ Rails.application.routes.draw do
   resources :users
 
   resources :onsens do
-    collection do
-      get 'region/:region', to: 'onsens#region', as: 'region'
-      get 'region/:region/prefecture/:prefecture', to: 'onsens#prefecture', as: 'prefecture'
-      get 'bookmarked', to: 'onsens#bookmarked', as: 'bookmarked'
-    end
-  
     member do
-      post :bookmark
-      delete :destroy 
+      post 'save'
     end
   end
 end

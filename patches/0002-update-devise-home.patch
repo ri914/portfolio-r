@@ -1,0 +1,725 @@
+From ffa9d2c57ea77b153fff3af3b63afb968c23120f Mon Sep 17 00:00:00 2001
+From: Apple <apple@Apples-MacBook-Air.local>
+Date: Sat, 1 Feb 2025 07:27:33 +0900
+Subject: [PATCH 02/17] =?UTF-8?q?[update]devise=E3=81=A8home=E3=81=AE?=
+ =?UTF-8?q?=E3=82=B3=E3=83=B3=E3=83=88=E3=83=AD=E3=83=BC=E3=83=A9=E3=81=A8?=
+ =?UTF-8?q?=E3=83=93=E3=83=A5=E3=83=BC=E3=82=92=E4=BD=9C=E6=88=90?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ app/controllers/application_controller.rb     | 23 +++++++
+ app/controllers/home_controller.rb            |  4 ++
+ .../users/confirmations_controller.rb         | 30 +++++++++
+ .../users/omniauth_callbacks_controller.rb    | 30 +++++++++
+ app/controllers/users/passwords_controller.rb | 34 ++++++++++
+ .../users/registrations_controller.rb         | 62 +++++++++++++++++++
+ app/controllers/users/sessions_controller.rb  | 27 ++++++++
+ app/controllers/users/unlocks_controller.rb   | 30 +++++++++
+ app/helpers/home_helper.rb                    |  2 +
+ app/views/devise/confirmations/new.html.erb   | 16 +++++
+ .../mailer/confirmation_instructions.html.erb |  5 ++
+ .../devise/mailer/email_changed.html.erb      |  7 +++
+ .../devise/mailer/password_change.html.erb    |  3 +
+ .../reset_password_instructions.html.erb      |  8 +++
+ .../mailer/unlock_instructions.html.erb       |  7 +++
+ app/views/devise/passwords/edit.html.erb      | 25 ++++++++
+ app/views/devise/passwords/new.html.erb       | 16 +++++
+ app/views/devise/registrations/edit.html.erb  | 43 +++++++++++++
+ app/views/devise/registrations/new.html.erb   | 29 +++++++++
+ app/views/devise/sessions/new.html.erb        | 26 ++++++++
+ .../devise/shared/_error_messages.html.erb    | 15 +++++
+ app/views/devise/shared/_links.html.erb       | 25 ++++++++
+ app/views/devise/unlocks/new.html.erb         | 16 +++++
+ app/views/home/top.html.erb                   |  2 +
+ config/routes.rb                              |  8 ++-
+ test/controllers/home_controller_test.rb      |  8 +++
+ 26 files changed, 499 insertions(+), 2 deletions(-)
+ create mode 100644 app/controllers/home_controller.rb
+ create mode 100644 app/controllers/users/confirmations_controller.rb
+ create mode 100644 app/controllers/users/omniauth_callbacks_controller.rb
+ create mode 100644 app/controllers/users/passwords_controller.rb
+ create mode 100644 app/controllers/users/registrations_controller.rb
+ create mode 100644 app/controllers/users/sessions_controller.rb
+ create mode 100644 app/controllers/users/unlocks_controller.rb
+ create mode 100644 app/helpers/home_helper.rb
+ create mode 100644 app/views/devise/confirmations/new.html.erb
+ create mode 100644 app/views/devise/mailer/confirmation_instructions.html.erb
+ create mode 100644 app/views/devise/mailer/email_changed.html.erb
+ create mode 100644 app/views/devise/mailer/password_change.html.erb
+ create mode 100644 app/views/devise/mailer/reset_password_instructions.html.erb
+ create mode 100644 app/views/devise/mailer/unlock_instructions.html.erb
+ create mode 100644 app/views/devise/passwords/edit.html.erb
+ create mode 100644 app/views/devise/passwords/new.html.erb
+ create mode 100644 app/views/devise/registrations/edit.html.erb
+ create mode 100644 app/views/devise/registrations/new.html.erb
+ create mode 100644 app/views/devise/sessions/new.html.erb
+ create mode 100644 app/views/devise/shared/_error_messages.html.erb
+ create mode 100644 app/views/devise/shared/_links.html.erb
+ create mode 100644 app/views/devise/unlocks/new.html.erb
+ create mode 100644 app/views/home/top.html.erb
+ create mode 100644 test/controllers/home_controller_test.rb
+
+diff --git a/app/controllers/application_controller.rb b/app/controllers/application_controller.rb
+index 09705d1..0cb546e 100644
+--- a/app/controllers/application_controller.rb
++++ b/app/controllers/application_controller.rb
+@@ -1,2 +1,25 @@
+ class ApplicationController < ActionController::Base
++  before_action :configure_permitted_parameters, if: :devise_controller?
++  helper_method :guest_user?
++
++  def after_sign_in_path_for(resource)
++    home_index_path
++  end
++
++  def after_sign_out_path_for(resource_or_scope)
++    root_path
++  end
++
++  protected
++
++  def configure_permitted_parameters
++    devise_parameter_sanitizer.permit(:sign_up, keys: [:name, :email])
++    devise_parameter_sanitizer.permit(:account_update, keys: [:name])
++  end
++
++  private
++
++  def guest_user?
++    current_user && current_user.guest?
++  end
+ end
+diff --git a/app/controllers/home_controller.rb b/app/controllers/home_controller.rb
+new file mode 100644
+index 0000000..f44cddf
+--- /dev/null
++++ b/app/controllers/home_controller.rb
+@@ -0,0 +1,4 @@
++class HomeController < ApplicationController
++  def top
++  end
++end
+diff --git a/app/controllers/users/confirmations_controller.rb b/app/controllers/users/confirmations_controller.rb
+new file mode 100644
+index 0000000..fa535c0
+--- /dev/null
++++ b/app/controllers/users/confirmations_controller.rb
+@@ -0,0 +1,30 @@
++# frozen_string_literal: true
++
++class Users::ConfirmationsController < Devise::ConfirmationsController
++  # GET /resource/confirmation/new
++  # def new
++  #   super
++  # end
++
++  # POST /resource/confirmation
++  # def create
++  #   super
++  # end
++
++  # GET /resource/confirmation?confirmation_token=abcdef
++  # def show
++  #   super
++  # end
++
++  # protected
++
++  # The path used after resending confirmation instructions.
++  # def after_resending_confirmation_instructions_path_for(resource_name)
++  #   super(resource_name)
++  # end
++
++  # The path used after confirmation.
++  # def after_confirmation_path_for(resource_name, resource)
++  #   super(resource_name, resource)
++  # end
++end
+diff --git a/app/controllers/users/omniauth_callbacks_controller.rb b/app/controllers/users/omniauth_callbacks_controller.rb
+new file mode 100644
+index 0000000..593f547
+--- /dev/null
++++ b/app/controllers/users/omniauth_callbacks_controller.rb
+@@ -0,0 +1,30 @@
++# frozen_string_literal: true
++
++class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
++  # You should configure your model like this:
++  # devise :omniauthable, omniauth_providers: [:twitter]
++
++  # You should also create an action method in this controller like this:
++  # def twitter
++  # end
++
++  # More info at:
++  # https://github.com/heartcombo/devise#omniauth
++
++  # GET|POST /resource/auth/twitter
++  # def passthru
++  #   super
++  # end
++
++  # GET|POST /users/auth/twitter/callback
++  # def failure
++  #   super
++  # end
++
++  # protected
++
++  # The path used when OmniAuth fails
++  # def after_omniauth_failure_path_for(scope)
++  #   super(scope)
++  # end
++end
+diff --git a/app/controllers/users/passwords_controller.rb b/app/controllers/users/passwords_controller.rb
+new file mode 100644
+index 0000000..259dbb0
+--- /dev/null
++++ b/app/controllers/users/passwords_controller.rb
+@@ -0,0 +1,34 @@
++# frozen_string_literal: true
++
++class Users::PasswordsController < Devise::PasswordsController
++  # GET /resource/password/new
++  # def new
++  #   super
++  # end
++
++  # POST /resource/password
++  # def create
++  #   super
++  # end
++
++  # GET /resource/password/edit?reset_password_token=abcdef
++  # def edit
++  #   super
++  # end
++
++  # PUT /resource/password
++  # def update
++  #   super
++  # end
++
++  # protected
++
++  # def after_resetting_password_path_for(resource)
++  #   super(resource)
++  # end
++
++  # The path used after sending reset password instructions
++  # def after_sending_reset_password_instructions_path_for(resource_name)
++  #   super(resource_name)
++  # end
++end
+diff --git a/app/controllers/users/registrations_controller.rb b/app/controllers/users/registrations_controller.rb
+new file mode 100644
+index 0000000..b9e664f
+--- /dev/null
++++ b/app/controllers/users/registrations_controller.rb
+@@ -0,0 +1,62 @@
++# frozen_string_literal: true
++
++class Users::RegistrationsController < Devise::RegistrationsController
++  # before_action :configure_sign_up_params, only: [:create]
++  # before_action :configure_account_update_params, only: [:update]
++
++  # GET /resource/sign_up
++  # def new
++  #   super
++  # end
++
++  # POST /resource
++  # def create
++  #   super
++  # end
++
++  # GET /resource/edit
++  # def edit
++  #   super
++  # end
++
++  # PUT /resource
++  # def update
++  #   super
++  # end
++
++  # DELETE /resource
++  # def destroy
++  #   super
++  # end
++
++  # GET /resource/cancel
++  # Forces the session data which is usually expired after sign
++  # in to be expired now. This is useful if the user wants to
++  # cancel oauth signing in/up in the middle of the process,
++  # removing all OAuth session data.
++  # def cancel
++  #   super
++  # end
++
++  # protected
++
++  # If you have extra params to permit, append them to the sanitizer.
++  # def configure_sign_up_params
++  #   devise_parameter_sanitizer.permit(:sign_up, keys: [:attribute])
++  # end
++
++  # If you have extra params to permit, append them to the sanitizer.
++  # def configure_account_update_params
++  #   devise_parameter_sanitizer.permit(:account_update, keys: [:attribute])
++  # end
++
++  # The path used after sign up.
++  # def after_sign_up_path_for(resource)
++  #   super(resource)
++  # end
++
++  # The path used after sign up for inactive accounts.
++  # def after_inactive_sign_up_path_for(resource)
++  #   super(resource)
++  # end
++end
+diff --git a/app/controllers/users/sessions_controller.rb b/app/controllers/users/sessions_controller.rb
+new file mode 100644
+index 0000000..a0f9b48
+--- /dev/null
++++ b/app/controllers/users/sessions_controller.rb
+@@ -0,0 +1,27 @@
++# frozen_string_literal: true
++
++class Users::SessionsController < Devise::SessionsController
++  # before_action :configure_sign_in_params, only: [:create]
++
++  # GET /resource/sign_in
++  # def new
++  #   super
++  # end
++
++  # POST /resource/sign_in
++  # def create
++  #   super
++  # end
++
++  # DELETE /resource/sign_out
++  # def destroy
++  #   super
++  # end
++
++  # protected
++
++  # If you have extra params to permit, append them to the sanitizer.
++  # def configure_sign_in_params
++  #   devise_parameter_sanitizer.permit(:sign_in, keys: [:attribute])
++  # end
++end
+diff --git a/app/controllers/users/unlocks_controller.rb b/app/controllers/users/unlocks_controller.rb
+new file mode 100644
+index 0000000..2c410dc
+--- /dev/null
++++ b/app/controllers/users/unlocks_controller.rb
+@@ -0,0 +1,30 @@
++# frozen_string_literal: true
++
++class Users::UnlocksController < Devise::UnlocksController
++  # GET /resource/unlock/new
++  # def new
++  #   super
++  # end
++
++  # POST /resource/unlock
++  # def create
++  #   super
++  # end
++
++  # GET /resource/unlock?unlock_token=abcdef
++  # def show
++  #   super
++  # end
++
++  # protected
++
++  # The path used after sending unlock password instructions
++  # def after_sending_unlock_instructions_path_for(resource)
++  #   super(resource)
++  # end
++
++  # The path used after unlocking the resource
++  # def after_unlock_path_for(resource)
++  #   super(resource)
++  # end
++end
+diff --git a/app/helpers/home_helper.rb b/app/helpers/home_helper.rb
+new file mode 100644
+index 0000000..23de56a
+--- /dev/null
++++ b/app/helpers/home_helper.rb
+@@ -0,0 +1,2 @@
++module HomeHelper
++end
+diff --git a/app/views/devise/confirmations/new.html.erb b/app/views/devise/confirmations/new.html.erb
+new file mode 100644
+index 0000000..b12dd0c
+--- /dev/null
++++ b/app/views/devise/confirmations/new.html.erb
+@@ -0,0 +1,16 @@
++<h2>Resend confirmation instructions</h2>
++
++<%= form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: { method: :post }) do |f| %>
++  <%= render "devise/shared/error_messages", resource: resource %>
++
++  <div class="field">
++    <%= f.label :email %><br />
++    <%= f.email_field :email, autofocus: true, autocomplete: "email", value: (resource.pending_reconfirmation? ? resource.unconfirmed_email : resource.email) %>
++  </div>
++
++  <div class="actions">
++    <%= f.submit "Resend confirmation instructions" %>
++  </div>
++<% end %>
++
++<%= render "devise/shared/links" %>
+diff --git a/app/views/devise/mailer/confirmation_instructions.html.erb b/app/views/devise/mailer/confirmation_instructions.html.erb
+new file mode 100644
+index 0000000..dc55f64
+--- /dev/null
++++ b/app/views/devise/mailer/confirmation_instructions.html.erb
+@@ -0,0 +1,5 @@
++<p>Welcome <%= @email %>!</p>
++
++<p>You can confirm your account email through the link below:</p>
++
++<p><%= link_to 'Confirm my account', confirmation_url(@resource, confirmation_token: @token) %></p>
+diff --git a/app/views/devise/mailer/email_changed.html.erb b/app/views/devise/mailer/email_changed.html.erb
+new file mode 100644
+index 0000000..32f4ba8
+--- /dev/null
++++ b/app/views/devise/mailer/email_changed.html.erb
+@@ -0,0 +1,7 @@
++<p>Hello <%= @email %>!</p>
++
++<% if @resource.try(:unconfirmed_email?) %>
++  <p>We're contacting you to notify you that your email is being changed to <%= @resource.unconfirmed_email %>.</p>
++<% else %>
++  <p>We're contacting you to notify you that your email has been changed to <%= @resource.email %>.</p>
++<% end %>
+diff --git a/app/views/devise/mailer/password_change.html.erb b/app/views/devise/mailer/password_change.html.erb
+new file mode 100644
+index 0000000..b41daf4
+--- /dev/null
++++ b/app/views/devise/mailer/password_change.html.erb
+@@ -0,0 +1,3 @@
++<p>Hello <%= @resource.email %>!</p>
++
++<p>We're contacting you to notify you that your password has been changed.</p>
+diff --git a/app/views/devise/mailer/reset_password_instructions.html.erb b/app/views/devise/mailer/reset_password_instructions.html.erb
+new file mode 100644
+index 0000000..f667dc1
+--- /dev/null
++++ b/app/views/devise/mailer/reset_password_instructions.html.erb
+@@ -0,0 +1,8 @@
++<p>Hello <%= @resource.email %>!</p>
++
++<p>Someone has requested a link to change your password. You can do this through the link below.</p>
++
++<p><%= link_to 'Change my password', edit_password_url(@resource, reset_password_token: @token) %></p>
++
++<p>If you didn't request this, please ignore this email.</p>
++<p>Your password won't change until you access the link above and create a new one.</p>
+diff --git a/app/views/devise/mailer/unlock_instructions.html.erb b/app/views/devise/mailer/unlock_instructions.html.erb
+new file mode 100644
+index 0000000..41e148b
+--- /dev/null
++++ b/app/views/devise/mailer/unlock_instructions.html.erb
+@@ -0,0 +1,7 @@
++<p>Hello <%= @resource.email %>!</p>
++
++<p>Your account has been locked due to an excessive number of unsuccessful sign in attempts.</p>
++
++<p>Click the link below to unlock your account:</p>
++
++<p><%= link_to 'Unlock my account', unlock_url(@resource, unlock_token: @token) %></p>
+diff --git a/app/views/devise/passwords/edit.html.erb b/app/views/devise/passwords/edit.html.erb
+new file mode 100644
+index 0000000..5fbb9ff
+--- /dev/null
++++ b/app/views/devise/passwords/edit.html.erb
+@@ -0,0 +1,25 @@
++<h2>Change your password</h2>
++
++<%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :put }) do |f| %>
++  <%= render "devise/shared/error_messages", resource: resource %>
++  <%= f.hidden_field :reset_password_token %>
++
++  <div class="field">
++    <%= f.label :password, "New password" %><br />
++    <% if @minimum_password_length %>
++      <em>(<%= @minimum_password_length %> characters minimum)</em><br />
++    <% end %>
++    <%= f.password_field :password, autofocus: true, autocomplete: "new-password" %>
++  </div>
++
++  <div class="field">
++    <%= f.label :password_confirmation, "Confirm new password" %><br />
++    <%= f.password_field :password_confirmation, autocomplete: "new-password" %>
++  </div>
++
++  <div class="actions">
++    <%= f.submit "Change my password" %>
++  </div>
++<% end %>
++
++<%= render "devise/shared/links" %>
+diff --git a/app/views/devise/passwords/new.html.erb b/app/views/devise/passwords/new.html.erb
+new file mode 100644
+index 0000000..9b486b8
+--- /dev/null
++++ b/app/views/devise/passwords/new.html.erb
+@@ -0,0 +1,16 @@
++<h2>Forgot your password?</h2>
++
++<%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :post }) do |f| %>
++  <%= render "devise/shared/error_messages", resource: resource %>
++
++  <div class="field">
++    <%= f.label :email %><br />
++    <%= f.email_field :email, autofocus: true, autocomplete: "email" %>
++  </div>
++
++  <div class="actions">
++    <%= f.submit "Send me reset password instructions" %>
++  </div>
++<% end %>
++
++<%= render "devise/shared/links" %>
+diff --git a/app/views/devise/registrations/edit.html.erb b/app/views/devise/registrations/edit.html.erb
+new file mode 100644
+index 0000000..b82e336
+--- /dev/null
++++ b/app/views/devise/registrations/edit.html.erb
+@@ -0,0 +1,43 @@
++<h2>Edit <%= resource_name.to_s.humanize %></h2>
++
++<%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f| %>
++  <%= render "devise/shared/error_messages", resource: resource %>
++
++  <div class="field">
++    <%= f.label :email %><br />
++    <%= f.email_field :email, autofocus: true, autocomplete: "email" %>
++  </div>
++
++  <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
++    <div>Currently waiting confirmation for: <%= resource.unconfirmed_email %></div>
++  <% end %>
++
++  <div class="field">
++    <%= f.label :password %> <i>(leave blank if you don't want to change it)</i><br />
++    <%= f.password_field :password, autocomplete: "new-password" %>
++    <% if @minimum_password_length %>
++      <br />
++      <em><%= @minimum_password_length %> characters minimum</em>
++    <% end %>
++  </div>
++
++  <div class="field">
++    <%= f.label :password_confirmation %><br />
++    <%= f.password_field :password_confirmation, autocomplete: "new-password" %>
++  </div>
++
++  <div class="field">
++    <%= f.label :current_password %> <i>(we need your current password to confirm your changes)</i><br />
++    <%= f.password_field :current_password, autocomplete: "current-password" %>
++  </div>
++
++  <div class="actions">
++    <%= f.submit "Update" %>
++  </div>
++<% end %>
++
++<h3>Cancel my account</h3>
++
++<div>Unhappy? <%= button_to "Cancel my account", registration_path(resource_name), data: { confirm: "Are you sure?", turbo_confirm: "Are you sure?" }, method: :delete %></div>
++
++<%= link_to "Back", :back %>
+diff --git a/app/views/devise/registrations/new.html.erb b/app/views/devise/registrations/new.html.erb
+new file mode 100644
+index 0000000..d655b66
+--- /dev/null
++++ b/app/views/devise/registrations/new.html.erb
+@@ -0,0 +1,29 @@
++<h2>Sign up</h2>
++
++<%= form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f| %>
++  <%= render "devise/shared/error_messages", resource: resource %>
++
++  <div class="field">
++    <%= f.label :email %><br />
++    <%= f.email_field :email, autofocus: true, autocomplete: "email" %>
++  </div>
++
++  <div class="field">
++    <%= f.label :password %>
++    <% if @minimum_password_length %>
++    <em>(<%= @minimum_password_length %> characters minimum)</em>
++    <% end %><br />
++    <%= f.password_field :password, autocomplete: "new-password" %>
++  </div>
++
++  <div class="field">
++    <%= f.label :password_confirmation %><br />
++    <%= f.password_field :password_confirmation, autocomplete: "new-password" %>
++  </div>
++
++  <div class="actions">
++    <%= f.submit "Sign up" %>
++  </div>
++<% end %>
++
++<%= render "devise/shared/links" %>
+diff --git a/app/views/devise/sessions/new.html.erb b/app/views/devise/sessions/new.html.erb
+new file mode 100644
+index 0000000..5ede964
+--- /dev/null
++++ b/app/views/devise/sessions/new.html.erb
+@@ -0,0 +1,26 @@
++<h2>Log in</h2>
++
++<%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
++  <div class="field">
++    <%= f.label :email %><br />
++    <%= f.email_field :email, autofocus: true, autocomplete: "email" %>
++  </div>
++
++  <div class="field">
++    <%= f.label :password %><br />
++    <%= f.password_field :password, autocomplete: "current-password" %>
++  </div>
++
++  <% if devise_mapping.rememberable? %>
++    <div class="field">
++      <%= f.check_box :remember_me %>
++      <%= f.label :remember_me %>
++    </div>
++  <% end %>
++
++  <div class="actions">
++    <%= f.submit "Log in" %>
++  </div>
++<% end %>
++
++<%= render "devise/shared/links" %>
+diff --git a/app/views/devise/shared/_error_messages.html.erb b/app/views/devise/shared/_error_messages.html.erb
+new file mode 100644
+index 0000000..cabfe30
+--- /dev/null
++++ b/app/views/devise/shared/_error_messages.html.erb
+@@ -0,0 +1,15 @@
++<% if resource.errors.any? %>
++  <div id="error_explanation" data-turbo-cache="false">
++    <h2>
++      <%= I18n.t("errors.messages.not_saved",
++                 count: resource.errors.count,
++                 resource: resource.class.model_name.human.downcase)
++       %>
++    </h2>
++    <ul>
++      <% resource.errors.full_messages.each do |message| %>
++        <li><%= message %></li>
++      <% end %>
++    </ul>
++  </div>
++<% end %>
+diff --git a/app/views/devise/shared/_links.html.erb b/app/views/devise/shared/_links.html.erb
+new file mode 100644
+index 0000000..7a75304
+--- /dev/null
++++ b/app/views/devise/shared/_links.html.erb
+@@ -0,0 +1,25 @@
++<%- if controller_name != 'sessions' %>
++  <%= link_to "Log in", new_session_path(resource_name) %><br />
++<% end %>
++
++<%- if devise_mapping.registerable? && controller_name != 'registrations' %>
++  <%= link_to "Sign up", new_registration_path(resource_name) %><br />
++<% end %>
++
++<%- if devise_mapping.recoverable? && controller_name != 'passwords' && controller_name != 'registrations' %>
++  <%= link_to "Forgot your password?", new_password_path(resource_name) %><br />
++<% end %>
++
++<%- if devise_mapping.confirmable? && controller_name != 'confirmations' %>
++  <%= link_to "Didn't receive confirmation instructions?", new_confirmation_path(resource_name) %><br />
++<% end %>
++
++<%- if devise_mapping.lockable? && resource_class.unlock_strategy_enabled?(:email) && controller_name != 'unlocks' %>
++  <%= link_to "Didn't receive unlock instructions?", new_unlock_path(resource_name) %><br />
++<% end %>
++
++<%- if devise_mapping.omniauthable? %>
++  <%- resource_class.omniauth_providers.each do |provider| %>
++    <%= button_to "Sign in with #{OmniAuth::Utils.camelize(provider)}", omniauth_authorize_path(resource_name, provider), data: { turbo: false } %><br />
++  <% end %>
++<% end %>
+diff --git a/app/views/devise/unlocks/new.html.erb b/app/views/devise/unlocks/new.html.erb
+new file mode 100644
+index 0000000..ffc34de
+--- /dev/null
++++ b/app/views/devise/unlocks/new.html.erb
+@@ -0,0 +1,16 @@
++<h2>Resend unlock instructions</h2>
++
++<%= form_for(resource, as: resource_name, url: unlock_path(resource_name), html: { method: :post }) do |f| %>
++  <%= render "devise/shared/error_messages", resource: resource %>
++
++  <div class="field">
++    <%= f.label :email %><br />
++    <%= f.email_field :email, autofocus: true, autocomplete: "email" %>
++  </div>
++
++  <div class="actions">
++    <%= f.submit "Resend unlock instructions" %>
++  </div>
++<% end %>
++
++<%= render "devise/shared/links" %>
+diff --git a/app/views/home/top.html.erb b/app/views/home/top.html.erb
+new file mode 100644
+index 0000000..77050e5
+--- /dev/null
++++ b/app/views/home/top.html.erb
+@@ -0,0 +1,2 @@
++<h1>Home#top</h1>
++<p>Find me in app/views/home/top.html.erb</p>
+diff --git a/config/routes.rb b/config/routes.rb
+index 40492f6..6ace437 100644
+--- a/config/routes.rb
++++ b/config/routes.rb
+@@ -1,4 +1,8 @@
+ Rails.application.routes.draw do
+-  devise_for :users
+-  get 'home/top'
++  root 'home#top'
++  devise_for :users, controllers: { registrations: 'users/registrations', sessions: 'users/sessions' }
++
++  devise_scope :user do
++    get 'guest_login', to: 'users/sessions#guest_login'
++  end
+ end
+diff --git a/test/controllers/home_controller_test.rb b/test/controllers/home_controller_test.rb
+new file mode 100644
+index 0000000..09737ee
+--- /dev/null
++++ b/test/controllers/home_controller_test.rb
+@@ -0,0 +1,8 @@
++require "test_helper"
++
++class HomeControllerTest < ActionDispatch::IntegrationTest
++  test "should get top" do
++    get home_top_url
++    assert_response :success
++  end
++end
+-- 
+2.39.3 (Apple Git-145)
+

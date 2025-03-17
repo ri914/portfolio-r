@@ -1,0 +1,39 @@
+From b8ac724a0e96a690ce902f4315a387466b7349b5 Mon Sep 17 00:00:00 2001
+From: Apple <apple@Apples-MacBook-Air.local>
+Date: Sat, 1 Feb 2025 08:48:29 +0900
+Subject: [PATCH 09/17] =?UTF-8?q?[update]=E9=80=80=E4=BC=9A=E6=A9=9F?=
+ =?UTF-8?q?=E8=83=BD=E3=82=92=E8=BF=BD=E5=8A=A0?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ app/controllers/users_controller.rb | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/app/controllers/users_controller.rb b/app/controllers/users_controller.rb
+index f2fc114..d083569 100644
+--- a/app/controllers/users_controller.rb
++++ b/app/controllers/users_controller.rb
+@@ -17,6 +17,18 @@ class UsersController < ApplicationController
+     end
+   end
+ 
++  def destroy
++    @user = current_user
++
++    if @user.guest?
++      redirect_to request.referer || root_path, alert: t('devise.registrations.guest_account_deletion_error')
++      return
++    end
++
++    @user.destroy
++    redirect_to root_path, notice: t('devise.registrations.account_deleted')
++  end
++
+   private
+ 
+   def user_params
+-- 
+2.39.3 (Apple Git-145)
+

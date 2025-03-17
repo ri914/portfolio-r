@@ -1,0 +1,348 @@
+From 8b52eb61fd200e205247ce009f86739f40b30858 Mon Sep 17 00:00:00 2001
+From: Apple <apple@Apples-MacBook-Air.local>
+Date: Sat, 1 Feb 2025 09:13:30 +0900
+Subject: [PATCH 10/17] =?UTF-8?q?[update]=E6=B8=A9=E6=B3=89=E6=8A=95?=
+ =?UTF-8?q?=E7=A8=BF=E7=94=A8=E3=81=AE=E6=A9=9F=E8=83=BD=E3=82=92=E8=BF=BD?=
+ =?UTF-8?q?=E5=8A=A0=E3=81=97=E3=80=81=E3=83=A6=E3=83=BC=E3=82=B6=E3=83=BC?=
+ =?UTF-8?q?=E3=81=AE=E6=83=85=E5=A0=B1=E3=81=A8=E7=B4=90=E4=BB=98=E3=81=91?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ app/controllers/onsens_controller.rb          | 32 ++++++++++++++++
+ app/controllers/users_controller.rb           |  4 ++
+ app/helpers/onsens_helper.rb                  |  2 +
+ app/models/onsen.rb                           |  6 +++
+ app/models/user.rb                            |  3 ++
+ app/views/onsens/new.html.erb                 | 38 +++++++++++++++++++
+ app/views/users/show.html.erb                 | 20 ++++++++++
+ config/routes.rb                              |  6 +++
+ ...0201000623_create_onsens_with_user_info.rb | 29 ++++++++++++++
+ db/schema.rb                                  | 20 +++++++++-
+ test/controllers/onsens_controller_test.rb    |  7 ++++
+ test/fixtures/onsens.yml                      | 11 ++++++
+ test/models/onsen_test.rb                     |  7 ++++
+ 13 files changed, 184 insertions(+), 1 deletion(-)
+ create mode 100644 app/controllers/onsens_controller.rb
+ create mode 100644 app/helpers/onsens_helper.rb
+ create mode 100644 app/models/onsen.rb
+ create mode 100644 app/views/onsens/new.html.erb
+ create mode 100644 db/migrate/20250201000623_create_onsens_with_user_info.rb
+ create mode 100644 test/controllers/onsens_controller_test.rb
+ create mode 100644 test/fixtures/onsens.yml
+ create mode 100644 test/models/onsen_test.rb
+
+diff --git a/app/controllers/onsens_controller.rb b/app/controllers/onsens_controller.rb
+new file mode 100644
+index 0000000..a281c6b
+--- /dev/null
++++ b/app/controllers/onsens_controller.rb
+@@ -0,0 +1,32 @@
++class OnsensController < ApplicationController
++  before_action :authenticate_user!
++
++  def new
++    @onsen = Onsen.new
++  end
++
++  def create
++    @onsen = current_user.onsens.build(onsen_params)
++    if @onsen.save
++      redirect_to @onsen, notice: t('notices.onsen_created')
++    else
++      render :new
++    end
++  end
++
++  def save
++    @onsen = Onsen.find(params[:id])
++    @onsen.saved_by_user_id = current_user.id
++    if @onsen.save
++      redirect_to @onsen, notice: t('notices.onsen_saved')
++    else
++      redirect_to @onsen, alert: t('alerts.onsen_save_failed')
++    end
++  end
++
++  private
++
++  def onsen_params
++    params.require(:onsen).permit(:name, :location, :description, :image)
++  end
++end
+diff --git a/app/controllers/users_controller.rb b/app/controllers/users_controller.rb
+index d083569..1accb8d 100644
+--- a/app/controllers/users_controller.rb
++++ b/app/controllers/users_controller.rb
+@@ -1,6 +1,8 @@
+ class UsersController < ApplicationController
+   def show
+     @user = User.find(params[:id])
++    @saved_onsens = @user.saved_onsens
++    @posted_onsens = @user.onsens
+   end
+ 
+   def update
+@@ -25,6 +27,8 @@ class UsersController < ApplicationController
+       return
+     end
+ 
++    @user.onsens.destroy_all if @user.onsens.present?
++
+     @user.destroy
+     redirect_to root_path, notice: t('devise.registrations.account_deleted')
+   end
+diff --git a/app/helpers/onsens_helper.rb b/app/helpers/onsens_helper.rb
+new file mode 100644
+index 0000000..faf41ad
+--- /dev/null
++++ b/app/helpers/onsens_helper.rb
+@@ -0,0 +1,2 @@
++module OnsensHelper
++end
+diff --git a/app/models/onsen.rb b/app/models/onsen.rb
+new file mode 100644
+index 0000000..78d147e
+--- /dev/null
++++ b/app/models/onsen.rb
+@@ -0,0 +1,6 @@
++class Onsen < ApplicationRecord
++  belongs_to :user
++  belongs_to :saved_by_user, class_name: 'User', optional: true
++
++  validates :name, presence: true
++end
+diff --git a/app/models/user.rb b/app/models/user.rb
+index 7441804..9ce778d 100644
+--- a/app/models/user.rb
++++ b/app/models/user.rb
+@@ -6,5 +6,8 @@ class User < ApplicationRecord
+     email == 'guest@example.com'
+   end
+ 
++
++  has_many :onsens, dependent: :destroy
++  has_many :saved_onsens, class_name: 'Onsen', foreign_key: 'saved_by_user_id'
+   has_one_attached :avatar
+ end
+diff --git a/app/views/onsens/new.html.erb b/app/views/onsens/new.html.erb
+new file mode 100644
+index 0000000..ce8f43e
+--- /dev/null
++++ b/app/views/onsens/new.html.erb
+@@ -0,0 +1,38 @@
++<h1>温泉地の投稿</h1>
++
++<%= form_with model: @onsen, local: true do |form| %>
++  <% if @onsen.errors.any? %>
++    <div id="error_explanation">
++      <h2><%= pluralize(@onsen.errors.count, "error") %> prohibited this onsen from being saved:</h2>
++      <ul>
++        <% @onsen.errors.full_messages.each do |message| %>
++          <li><%= message %></li>
++        <% end %>
++      </ul>
++    </div>
++  <% end %>
++
++  <div class="field">
++    <%= form.label :name %>
++    <%= form.text_field :name %>
++  </div>
++
++  <div class="field">
++    <%= form.label :location %>
++    <%= form.text_field :location %>
++  </div>
++
++  <div class="field">
++    <%= form.label :description %>
++    <%= form.text_area :description %>
++  </div>
++
++  <div class="field">
++    <%= form.label :image %>
++    <%= form.file_field :image %>
++  </div>
++
++  <div class="actions">
++    <%= form.submit '投稿', class: 'btn btn-primary' %>
++  </div>
++<% end %>
+diff --git a/app/views/users/show.html.erb b/app/views/users/show.html.erb
+index 7832e44..a2b480e 100644
+--- a/app/views/users/show.html.erb
++++ b/app/views/users/show.html.erb
+@@ -26,12 +26,32 @@
+ 
+     <div class="onsens-section">
+       <h1>お気に入りの温泉地</h1>
++      <% if @saved_onsens.any? %>
++        <ul class="mypage-ul">
++          <% @saved_onsens.each do |onsen| %>
++            <li class="mypage-li">
++              <%= link_to onsen.name, onsen_path(onsen) %>
++            </li>
++          <% end %>
++        </ul>
++      <% else %>
+         <p class="note">お気に入りの温泉地はありません。</p>
++      <% end %>
+     </div>
+ 
+     <div class="onsens-section">
+       <h1>投稿した温泉地</h1>
++      <% if @posted_onsens.any? %>
++        <ul class="mypage-ul">
++          <% @posted_onsens.each do |onsen| %>
++            <li class="mypage-li">
++              <%= link_to onsen.name, onsen_path(onsen) %>
++            </li>
++          <% end %>
++        </ul>
++      <% else %>
+         <p class="note">投稿した温泉地はありません。</p>
++      <% end %>
+     </div>
+   </div>
+ </div>
+diff --git a/config/routes.rb b/config/routes.rb
+index f073174..1dbd718 100644
+--- a/config/routes.rb
++++ b/config/routes.rb
+@@ -9,4 +9,10 @@ Rails.application.routes.draw do
+   get 'home/index', to: 'home#index'
+ 
+   resources :users
++
++  resources :onsens do
++    member do
++      post 'save'
++    end
++  end
+ end
+diff --git a/db/migrate/20250201000623_create_onsens_with_user_info.rb b/db/migrate/20250201000623_create_onsens_with_user_info.rb
+new file mode 100644
+index 0000000..ebbc9a2
+--- /dev/null
++++ b/db/migrate/20250201000623_create_onsens_with_user_info.rb
+@@ -0,0 +1,29 @@
++class CreateOnsensWithUserInfo < ActiveRecord::Migration[7.1]
++  def change
++    create_table :onsens do |t|
++      t.string :name, null: false
++      t.string :location
++      t.text :description
++      t.string :image
++      t.text :activities
++      t.string :best_time_to_visit
++      t.text :access_info
++      t.decimal :rating, precision: 2, scale: 1
++      t.integer :user_id, null: false
++      t.integer :saved_by_user_id
++
++      t.timestamps
++    end
++
++    add_index :onsens, :user_id
++    add_index :onsens, :saved_by_user_id
++
++    reversible do |dir|
++      dir.up do
++        execute "UPDATE onsens SET user_id = 1"
++      end
++    end
++
++    add_foreign_key :onsens, :users
++  end
++end
+diff --git a/db/schema.rb b/db/schema.rb
+index bac24c5..32c14ee 100644
+--- a/db/schema.rb
++++ b/db/schema.rb
+@@ -10,7 +10,7 @@
+ #
+ # It's strongly recommended that you check this file into your version control system.
+ 
+-ActiveRecord::Schema[7.1].define(version: 2025_01_31_233302) do
++ActiveRecord::Schema[7.1].define(version: 2025_02_01_000623) do
+   create_table "active_storage_attachments", force: :cascade do |t|
+     t.string "name", null: false
+     t.string "record_type", null: false
+@@ -39,6 +39,23 @@ ActiveRecord::Schema[7.1].define(version: 2025_01_31_233302) do
+     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+   end
+ 
++  create_table "onsens", force: :cascade do |t|
++    t.string "name", null: false
++    t.string "location"
++    t.text "description"
++    t.string "image"
++    t.text "activities"
++    t.string "best_time_to_visit"
++    t.text "access_info"
++    t.decimal "rating", precision: 2, scale: 1
++    t.integer "user_id", null: false
++    t.integer "saved_by_user_id"
++    t.datetime "created_at", null: false
++    t.datetime "updated_at", null: false
++    t.index ["saved_by_user_id"], name: "index_onsens_on_saved_by_user_id"
++    t.index ["user_id"], name: "index_onsens_on_user_id"
++  end
++
+   create_table "users", force: :cascade do |t|
+     t.string "email", default: "", null: false
+     t.string "encrypted_password", default: "", null: false
+@@ -55,4 +72,5 @@ ActiveRecord::Schema[7.1].define(version: 2025_01_31_233302) do
+ 
+   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
+   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
++  add_foreign_key "onsens", "users"
+ end
+diff --git a/test/controllers/onsens_controller_test.rb b/test/controllers/onsens_controller_test.rb
+new file mode 100644
+index 0000000..996aff5
+--- /dev/null
++++ b/test/controllers/onsens_controller_test.rb
+@@ -0,0 +1,7 @@
++require "test_helper"
++
++class OnsensControllerTest < ActionDispatch::IntegrationTest
++  # test "the truth" do
++  #   assert true
++  # end
++end
+diff --git a/test/fixtures/onsens.yml b/test/fixtures/onsens.yml
+new file mode 100644
+index 0000000..d7a3329
+--- /dev/null
++++ b/test/fixtures/onsens.yml
+@@ -0,0 +1,11 @@
++# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
++
++# This model initially had no columns defined. If you add columns to the
++# model remove the "{}" from the fixture names and add the columns immediately
++# below each fixture, per the syntax in the comments below
++#
++one: {}
++# column: value
++#
++two: {}
++# column: value
+diff --git a/test/models/onsen_test.rb b/test/models/onsen_test.rb
+new file mode 100644
+index 0000000..723ef4a
+--- /dev/null
++++ b/test/models/onsen_test.rb
+@@ -0,0 +1,7 @@
++require "test_helper"
++
++class OnsenTest < ActiveSupport::TestCase
++  # test "the truth" do
++  #   assert true
++  # end
++end
+-- 
+2.39.3 (Apple Git-145)
+

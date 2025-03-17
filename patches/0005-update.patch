@@ -1,0 +1,180 @@
+From f146a2e6c340735c1daeea682913bd0e91fc42a9 Mon Sep 17 00:00:00 2001
+From: Apple <apple@Apples-MacBook-Air.local>
+Date: Sat, 1 Feb 2025 08:00:13 +0900
+Subject: [PATCH 05/17] =?UTF-8?q?[update]=E3=83=8A=E3=83=93=E3=83=A1?=
+ =?UTF-8?q?=E3=83=8B=E3=83=A5=E3=83=BC=E8=BF=BD=E5=8A=A0?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ app/assets/stylesheets/application.scss | 83 +++++++++++++++++++++++++
+ app/views/layouts/_nav.html.erb         | 51 +++++++++++++++
+ app/views/layouts/application.html.erb  |  2 +
+ 3 files changed, 136 insertions(+)
+ create mode 100644 app/views/layouts/_nav.html.erb
+
+diff --git a/app/assets/stylesheets/application.scss b/app/assets/stylesheets/application.scss
+index 564d60e..1ce2d50 100644
+--- a/app/assets/stylesheets/application.scss
++++ b/app/assets/stylesheets/application.scss
+@@ -15,3 +15,86 @@
+  */
+ 
+  @import 'bootstrap';
++
++
++ .navbar {
++  background-color: #fff;
++  border-bottom: 2px solid #e6b200;
++  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
++}
++
++.navbar-nav .nav-item .nav-link {
++  color: #444;
++  font-weight: 500;
++  font-size: 1.1rem;
++  padding: 10px 20px;
++  transition: color 0.3s ease, background-color 0.3s ease;
++}
++
++.navbar-nav .nav-item .nav-link i {
++  margin-right: 5px;
++}
++
++.navbar-nav .nav-item .nav-link:hover {
++  background-color: #e6b200;
++  color: #fff;
++  border-radius: 8px;
++}
++
++.dropdown-menu {
++ background-color: #fff;
++ border-radius: 8px;
++ border: none;
++ box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
++}
++
++.dropdown-item {
++ color: #444;
++ padding: 10px 20px;
++ transition: background-color 0.3s ease, color 0.3s ease;
++}
++
++.dropdown-item:hover {
++ background-color: #e6b200;
++ color: #fff;
++}
++
++.navbar-nav {
++ align-items: center;
++}
++
++.search_container {
++ box-sizing: border-box;
++ position: relative;
++ border: 1px solid #999;
++ padding: 3px 10px;
++ border-radius: 20px;
++ height: 2.3em;
++ width: 260px;
++ overflow: hidden;
++ margin-left: auto;
++}
++
++.search_container input[type="text"] {
++ border: none;
++ height: 2.0em;
++}
++
++.search_container input[type="text"]:focus {
++ outline: 0;
++}
++
++.search_container input[type="submit"] {
++ cursor: pointer;
++ font-family: FontAwesome;
++ font-size: 1.3em;
++ border: none;
++ background: none;
++ color: #3879D9;
++ position: absolute;
++ width: 2.5em;
++ height: 2.5em;
++ right: 0;
++ top: -10px;
++ outline: none;
++}
+diff --git a/app/views/layouts/_nav.html.erb b/app/views/layouts/_nav.html.erb
+new file mode 100644
+index 0000000..2aa98fd
+--- /dev/null
++++ b/app/views/layouts/_nav.html.erb
+@@ -0,0 +1,51 @@
++  <nav class="navbar navbar-expand-lg navbar-light bg-light">
++    <div class="container-fluid">
++      <div class="collapse navbar-collapse" id="navbarNav">
++        <ul class="navbar-nav mx-auto">
++          <li class="nav-item">
++            <a class="nav-link active" href="<%= user_signed_in? ? home_index_path : root_path %>">
++              <i class="fas fa-home"></i> ホーム
++            </a>
++          </li>
++          <% if user_signed_in? %>
++            <li class="nav-item">
++              <a class="nav-link" href="<%#= onsen_index_path %>">
++                <i class="fas fa-globe"></i> 温泉地一覧
++              </a>
++            </li>
++            <li class="nav-item dropdown">
++              <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
++              </a>
++              <ul class="dropdown-menu" aria-labelledby="userDropdown">
++                <li><a class="dropdown-item" href="<%= edit_user_registration_path %>"><i class="fas fa-cog"></i> 設定</a></li>
++                <li class="nav-item">
++                  <%= form_with url: destroy_user_session_path, method: :delete, local: true do |form| %>
++                    <button type="submit" class="dropdown-item d-flex align-items-center" onclick="return confirm('ログアウトしますか？');">
++                      <i class="fas fa-sign-out-alt me-2"></i>
++                      ログアウト
++                    </button>
++                  <% end %>
++                </li>
++              </ul>
++            </li>
++            <li class="nav-item">
++              <form method="get" action="#" class="search_container">
++                <input type="text" size="25" placeholder="キーワードを入力...">
++                <input type="submit" value="&#xf002">
++              </form>
++            </li>
++          <% else %>
++            <li class="nav-item">
++              <a class="nav-link" href="<%= new_user_registration_path %>"><i class="fas fa-user-plus"></i> 新規登録</a>
++            </li>
++            <li class="nav-item">
++              <a class="nav-link" href="<%= new_user_session_path %>"><i class="fas fa-sign-in-alt"></i> ログイン</a>
++            </li>
++            <li class="nav-item">
++              <a class="nav-link" href="<%= guest_login_path %>"><i class="fas fa-user-friends"></i> ゲストログイン</a>
++            </li>
++          <% end %>
++        </ul>
++      </div>
++    </div>
++  </nav>
+diff --git a/app/views/layouts/application.html.erb b/app/views/layouts/application.html.erb
+index 19ee0d0..bb6f3fc 100644
+--- a/app/views/layouts/application.html.erb
++++ b/app/views/layouts/application.html.erb
+@@ -4,6 +4,8 @@
+   <body>
+ 
+     <%= render 'layouts/head' %>
++
++    <%= render 'layouts/nav' %>
+     
+     <%= yield %>
+ 
+-- 
+2.39.3 (Apple Git-145)
+

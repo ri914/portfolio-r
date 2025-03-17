@@ -1,0 +1,104 @@
+From 21b39489cf5f9a7b824f644779b2a74bbf83cc12 Mon Sep 17 00:00:00 2001
+From: Apple <apple@Apples-MacBook-Air.local>
+Date: Sat, 1 Feb 2025 08:14:45 +0900
+Subject: [PATCH 06/17] =?UTF-8?q?[update]=E3=83=95=E3=83=83=E3=82=BF?=
+ =?UTF-8?q?=E3=83=BC=E8=BF=BD=E5=8A=A0?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ app/assets/stylesheets/application.scss | 47 +++++++++++++++++++++++++
+ app/views/layouts/_footer.html.erb      |  9 +++++
+ app/views/layouts/application.html.erb  |  4 +++
+ 3 files changed, 60 insertions(+)
+ create mode 100644 app/views/layouts/_footer.html.erb
+
+diff --git a/app/assets/stylesheets/application.scss b/app/assets/stylesheets/application.scss
+index 1ce2d50..3e1b8b5 100644
+--- a/app/assets/stylesheets/application.scss
++++ b/app/assets/stylesheets/application.scss
+@@ -98,3 +98,50 @@
+  top: -10px;
+  outline: none;
+ }
++
++
++.footer {
++  background-color: #2c3e50;
++  color: #ecf0f1;
++  padding: 40px 20px;
++  text-align: center;
++}
++
++.footer-content {
++  max-width: 800px;
++  margin: 0 auto;
++}
++
++.footer-copyright {
++  font-size: 14px;
++  margin-bottom: 10px;
++}
++
++.footer-description {
++  font-size: 16px;
++}
++
++.footer-skills {
++  font-size: 14px;
++  margin-bottom: 20px;
++}
++
++.footer-contact {
++  font-size: 14px;
++  margin-bottom: 20px;
++}
++
++.social-icon {
++  color: #ecf0f1;
++  font-size: 24px;
++  margin: 0 10px;
++  transition: color 0.3s;
++}
++
++.social-icon:hover {
++  color: #e74c3c;
++}
++
++.footer-projects {
++  font-size: 14px;
++}
+diff --git a/app/views/layouts/_footer.html.erb b/app/views/layouts/_footer.html.erb
+new file mode 100644
+index 0000000..7fed3cf
+--- /dev/null
++++ b/app/views/layouts/_footer.html.erb
+@@ -0,0 +1,9 @@
++<div class="footer-content">
++  <p class="footer-copyright">&copy; 2024 ri914. All Rights Reserved.</p>
++  <p class="footer-description">温泉マッチングは、ユーザーが自分の好みに合った温泉地を見つけるためのマッチングサービスです。</p>
++  <p class="footer-skills">使用技術: <span>Ruby on Rails, HTML, CSS, JavaScript, Bootstrap</span></p>
++  <p class="footer-contact">お問い合わせ: <a href="mailto:issue914@gmail.com">issue914@gmail.com</a></p>    
++  <div class="footer-social-media">
++    <a href="https://github.com/ri914" target="_blank" class="social-icon"><i class="fab fa-github"></i></a>
++  </div>
++</div>
+diff --git a/app/views/layouts/application.html.erb b/app/views/layouts/application.html.erb
+index bb6f3fc..13f6a91 100644
+--- a/app/views/layouts/application.html.erb
++++ b/app/views/layouts/application.html.erb
+@@ -8,6 +8,10 @@
+     <%= render 'layouts/nav' %>
+     
+     <%= yield %>
++    
++    <footer class="footer">
++      <%= render 'layouts/footer' %> 
++    </footer>
+ 
+   </body>
+ </html>
+-- 
+2.39.3 (Apple Git-145)
+

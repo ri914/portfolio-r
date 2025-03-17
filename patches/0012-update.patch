@@ -1,0 +1,138 @@
+From 81b31427bf3007083d82bdd5aabdf9e2c49be678 Mon Sep 17 00:00:00 2001
+From: Apple <apple@Apples-MacBook-Air.local>
+Date: Sun, 2 Feb 2025 14:17:21 +0900
+Subject: [PATCH 12/17] =?UTF-8?q?[update]=E3=83=95=E3=83=A9=E3=83=83?=
+ =?UTF-8?q?=E3=82=B7=E3=83=A5=E3=83=A1=E3=83=83=E3=82=BB=E3=83=BC=E3=82=B8?=
+ =?UTF-8?q?=E3=82=92=E8=BF=BD=E5=8A=A0?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ Gemfile                                    |  2 ++
+ Gemfile.lock                               |  5 +++++
+ app/javascript/application.js              |  9 +++++++++
+ app/views/layouts/_flash_messages.html.erb | 10 ++++++++++
+ app/views/layouts/application.html.erb     |  2 ++
+ config/locales/devise.en.yml               | 13 ++++++++-----
+ 6 files changed, 36 insertions(+), 5 deletions(-)
+ create mode 100644 app/views/layouts/_flash_messages.html.erb
+
+diff --git a/Gemfile b/Gemfile
+index 53df162..1969f85 100644
+--- a/Gemfile
++++ b/Gemfile
+@@ -71,3 +71,5 @@ gem 'devise'
+ gem 'sassc-rails'
+ 
+ gem 'bootstrap', '~> 5.0'
++
++gem 'jquery-rails'
+diff --git a/Gemfile.lock b/Gemfile.lock
+index 6bd5e68..2da27b6 100644
+--- a/Gemfile.lock
++++ b/Gemfile.lock
+@@ -137,6 +137,10 @@ GEM
+     jbuilder (2.13.0)
+       actionview (>= 5.0.0)
+       activesupport (>= 5.0.0)
++    jquery-rails (4.6.0)
++      rails-dom-testing (>= 1, < 3)
++      railties (>= 4.2.0)
++      thor (>= 0.14, < 2.0)
+     logger (1.6.5)
+     loofah (2.24.0)
+       crass (~> 1.0.2)
+@@ -298,6 +302,7 @@ DEPENDENCIES
+   devise
+   importmap-rails
+   jbuilder
++  jquery-rails
+   puma (>= 5.0)
+   rails (~> 7.1.5, >= 7.1.5.1)
+   sassc-rails
+diff --git a/app/javascript/application.js b/app/javascript/application.js
+index 9187c5f..68ac67b 100644
+--- a/app/javascript/application.js
++++ b/app/javascript/application.js
+@@ -35,3 +35,12 @@ $(document).ready(function() {
+     }
+   });
+ });
++
++
++$(function(){
++  setTimeout("$('.flash').fadeOut('slow')", 3000);
++});
++
++$(function(){
++  setTimeout("$('.alert').fadeOut('slow')", 3000);
++});
+diff --git a/app/views/layouts/_flash_messages.html.erb b/app/views/layouts/_flash_messages.html.erb
+new file mode 100644
+index 0000000..6456a8f
+--- /dev/null
++++ b/app/views/layouts/_flash_messages.html.erb
+@@ -0,0 +1,10 @@
++<% if flash[:alert] %>
++  <div class="alert alert-danger">
++    <%= flash[:alert] %>
++  </div>
++<% end %>
++<% if flash[:notice] %>
++  <div class="alert alert-success">
++    <%= flash[:notice] %>
++  </div>
++<% end %>
+diff --git a/app/views/layouts/application.html.erb b/app/views/layouts/application.html.erb
+index 13f6a91..f5148e8 100644
+--- a/app/views/layouts/application.html.erb
++++ b/app/views/layouts/application.html.erb
+@@ -7,6 +7,8 @@
+ 
+     <%= render 'layouts/nav' %>
+     
++    <%= render 'layouts/flash_messages' %>
++    
+     <%= yield %>
+     
+     <footer class="footer">
+diff --git a/config/locales/devise.en.yml b/config/locales/devise.en.yml
+index 260e1c4..1907c32 100644
+--- a/config/locales/devise.en.yml
++++ b/config/locales/devise.en.yml
+@@ -1,5 +1,3 @@
+-# Additional translations at https://github.com/heartcombo/devise/wiki/I18n
+-
+ en:
+   devise:
+     confirmations:
+@@ -38,17 +36,22 @@ en:
+       updated_not_active: "Your password has been changed successfully."
+     registrations:
+       destroyed: "Bye! Your account has been successfully cancelled. We hope to see you again soon."
+-      signed_up: "Welcome! You have signed up successfully."
++      signed_up: "アカウントを作成しました。"
+       signed_up_but_inactive: "You have signed up successfully. However, we could not sign you in because your account is not yet activated."
+       signed_up_but_locked: "You have signed up successfully. However, we could not sign you in because your account is locked."
+       signed_up_but_unconfirmed: "A message with a confirmation link has been sent to your email address. Please follow the link to activate your account."
+       update_needs_confirmation: "You updated your account successfully, but we need to verify your new email address. Please check your email and follow the confirmation link to confirm your new email address."
+       updated: "Your account has been updated successfully."
+       updated_but_not_signed_in: "Your account has been updated successfully, but since your password was changed, you need to sign in again."
++      account_created: "アカウントを作成しました。"
++      account_updated: "変更が保存されました。"
++      account_deleted: "退会しました。"
++      guest_account_deletion_error: "ゲストユーザーは退会できません。" 
+     sessions:
+-      signed_in: "Signed in successfully."
+-      signed_out: "Signed out successfully."
++      signed_in: "ログインしました。"
++      signed_out: "ログアウトしました。"
+       already_signed_out: "Signed out successfully."
++      guest_logged_in: "ゲストユーザーとしてログインしました。"
+     unlocks:
+       send_instructions: "You will receive an email with instructions for how to unlock your account in a few minutes."
+       send_paranoid_instructions: "If your account exists, you will receive an email with instructions for how to unlock it in a few minutes."
+-- 
+2.39.3 (Apple Git-145)
+

@@ -1,0 +1,231 @@
+From 88b2de325de7287f3592bdef89f61ab554365176 Mon Sep 17 00:00:00 2001
+From: Apple <apple@Apples-MacBook-Air.local>
+Date: Sat, 1 Feb 2025 09:37:58 +0900
+Subject: [PATCH 11/17] =?UTF-8?q?[update]=E3=83=9B=E3=83=BC=E3=83=A0?=
+ =?UTF-8?q?=E3=83=9A=E3=83=BC=E3=82=B8(home/index)=E3=81=AE=E7=94=BB?=
+ =?UTF-8?q?=E9=9D=A2=E3=82=92=E4=BD=9C=E6=88=90?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ app/assets/stylesheets/style.scss  | 146 +++++++++++++++++++++++++++++
+ app/controllers/home_controller.rb |   1 +
+ app/views/home/index.html.erb      |  43 +++++++++
+ 3 files changed, 190 insertions(+)
+ create mode 100644 app/assets/stylesheets/style.scss
+
+diff --git a/app/assets/stylesheets/style.scss b/app/assets/stylesheets/style.scss
+new file mode 100644
+index 0000000..69db5dd
+--- /dev/null
++++ b/app/assets/stylesheets/style.scss
+@@ -0,0 +1,146 @@
++.home-main {
++  display: flex;
++  align-items: center;
++  flex-direction: column; 
++  width: 100%;
++  background: url("https://i.pinimg.com/originals/bb/eb/bb/bbebbb4df287d64069f021dde49134dd.jpg") no-repeat center center;
++  background-size: cover;
++  padding: 40px;
++  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
++}
++
++.title {
++  font-family: "Yuji Syuku", serif;
++  font-weight: 400;
++  font-style: normal;
++  text-align: center;
++}
++
++.main-title {
++  font-size: 7rem;
++  color: #C62135;
++  margin-bottom: 10px;
++  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
++}
++
++.sub-title {
++  font-size: 1.5rem;
++  color: #fff;
++  line-height: 1.6;
++  margin-top: 0;
++  padding: 0 20px;
++  text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.5);
++  border-bottom: 2px solid #C62135;
++  padding-bottom: 10px;
++  margin-bottom: 20px;
++}
++
++.btn,
++a.btn,
++button.btn {
++  font-size: 1.6rem;
++  font-weight: 700;
++  line-height: 1.5;
++  position: relative;
++  display: inline-block;
++  user-select: none;
++  transition: all 0.3s;
++  text-align: center;
++  vertical-align: middle;
++  text-decoration: none;
++  letter-spacing: 0.1em;
++  color: #212529;
++  border-radius: 0.5rem;
++}
++
++a.btn-3d-circle {
++  display: block;
++  margin: 20px auto;
++  padding: 0;
++  border-radius: 50%;
++  overflow: hidden;
++}
++
++.btn-3d-circle-content {
++  display: flex;
++  justify-content: center;
++  align-items: center;
++  width: 100%;
++  height: 100%;
++  transition: all 0.6s;
++  border-radius: 50%;
++  perspective: 150px;
++  text-align: center;
++  padding: 10px;
++}
++
++.btn-3d-circle-front {
++  font-size: 2rem;
++  color: #fff;
++  line-height: 1.2;
++  font-family: "Yuji Mai", serif;
++  font-weight: 400;
++  font-style: normal;
++}
++
++.btn-3d-circle:hover .btn-3d-circle-content {
++  transform: rotateY(0.5turn) rotateX(-0.03turn);
++}
++
++.btn-3d-circle:hover .btn-3d-circle-front {
++  opacity: 0;
++}
++
++.btn-3d-circle:hover .btn-3d-circle-back {
++  top: calc(50% - 2rem);
++  left: calc(50% - 0.75rem);
++  opacity: 1;
++}
++
++.btn-3d-circle-back {
++  font-size: 3rem;
++  position: absolute;
++  top: 70%;
++  left: 70%;
++  transition: all 0.3s;
++  letter-spacing: 0;
++  opacity: 0;
++}
++
++.button-container {
++  display: flex;
++  justify-content: center;
++  align-items: center;
++  flex-wrap: wrap;
++  gap: 20px;
++}
++
++.btn-post-onsen {
++  background: linear-gradient(to bottom, #a52a2a 0%, #8b0000 100%);
++  width: 330px;
++  height: 330px;
++}
++
++.btn-find-onsen {
++  background: linear-gradient(to bottom, #ff6f61 0%, #e53935 50%, #c62828 100%);
++  width: 400px;
++  height: 400px;
++}
++
++.btn-search-onsen {
++  background: linear-gradient(to bottom, #d35400 0%, #c0392b 100%);
++  width: 330px;
++  height: 330px;
++}
++
++.fa-plus {
++  color: #fff;
++}
++
++.fa-heart {
++  color: #fff;
++}
++
++.fa-search {
++  color: #fff;
++}
+diff --git a/app/controllers/home_controller.rb b/app/controllers/home_controller.rb
+index 6c669e9..d0725a9 100644
+--- a/app/controllers/home_controller.rb
++++ b/app/controllers/home_controller.rb
+@@ -3,5 +3,6 @@ class HomeController < ApplicationController
+   end
+ 
+   def index
++    @onsens = Onsen.order(created_at: :desc)
+   end
+ end
+diff --git a/app/views/home/index.html.erb b/app/views/home/index.html.erb
+index e69de29..cc797d1 100644
+--- a/app/views/home/index.html.erb
++++ b/app/views/home/index.html.erb
+@@ -0,0 +1,43 @@
++<div class="home-container">
++  <main class="home-main">
++    <div class="title">
++      <h1 class="main-title">温泉オンライン</h1>
++      <p class="sub-title">〜現地の人々とリアルタイムでつながる温泉情報共有サイト〜</p>
++    </div>
++    <div class="button-container">
++      <a href="<%= new_onsen_path %>" class="btn btn-3d-circle btn-post-onsen">
++        <span class="btn-3d-circle-content">
++          <span class="btn-3d-circle-front">新しい温泉地を <br> 投稿する</span>
++        </span>
++        <span class="btn-3d-circle-back"><i class="fas fa-plus"></i></span>
++      </a>        
++      <a href="<%#= nearby_onsens_path %>" class="btn btn-3d-circle btn-find-onsen">
++        <span class="btn-3d-circle-content">
++          <span class="btn-3d-circle-front">近くの温泉を <br> 探す</span>
++        </span>
++        <span class="btn-3d-circle-back"><i class="fas fa-map-marker-alt"></i></span>
++      </a>  
++      <a href="<%#= search_onsen_path %>" class="btn btn-3d-circle btn-search-onsen">
++        <span class="btn-3d-circle-content">
++          <span class="btn-3d-circle-front">温泉地を <br> 詳細検索する</span>
++        </span>
++        <span class="btn-3d-circle-back"><i class="fas fa-search"></i></span>
++      </a>
++    </div>
++  </main>
++  <h2>人気の温泉地</h2>
++  <div>
++    <% @onsens.each do |onsen| %>
++      <div>
++        <div>
++          <img src="<%= onsen.image || 'default_image.jpg' %>" alt="<%= onsen.name %>" style="height: 200px; object-fit: cover;">
++          <div>
++            <h5><%= link_to onsen.name, onsen_path(onsen) %></h5>
++            <p><%= truncate(onsen.description, length: 100) %></p>
++            <a href="<%= onsen_path(onsen) %>">詳細を見る</a>
++          </div>
++        </div>
++      </div>
++    <% end %>
++  </div>
++</div>
+-- 
+2.39.3 (Apple Git-145)
+

@@ -1,0 +1,223 @@
+From d04f49c7f0993ed4b708326b0a9b507f7cee9b1b Mon Sep 17 00:00:00 2001
+From: Apple <apple@Apples-MacBook-Air.local>
+Date: Sat, 1 Feb 2025 08:44:35 +0900
+Subject: [PATCH 08/17] =?UTF-8?q?[update]=E8=A8=AD=E5=AE=9A=E3=83=9A?=
+ =?UTF-8?q?=E3=83=BC=E3=82=B8=E3=82=92=E4=BD=9C=E6=88=90=E3=81=97=E3=80=81?=
+ =?UTF-8?q?=E3=83=9E=E3=82=A4=E3=83=9A=E3=83=BC=E3=82=B8=E3=82=92=E7=B7=A8?=
+ =?UTF-8?q?=E9=9B=86=E3=81=A7=E3=81=8D=E3=82=8B=E3=82=88=E3=81=86=E3=81=AB?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ app/assets/stylesheets/sessions.scss         | 42 +++++++++
+ app/controllers/users_controller.rb          | 14 +++
+ app/javascript/application.js                | 13 +++
+ app/views/devise/registrations/edit.html.erb | 99 ++++++++++++--------
+ 4 files changed, 127 insertions(+), 41 deletions(-)
+
+diff --git a/app/assets/stylesheets/sessions.scss b/app/assets/stylesheets/sessions.scss
+index a6f6ed8..e645f85 100644
+--- a/app/assets/stylesheets/sessions.scss
++++ b/app/assets/stylesheets/sessions.scss
+@@ -113,3 +113,45 @@ $background-color: #FFF8E1;
+   font-size: 0.9em;
+   color: #444;
+ }
++
++.edit-wrapper {
++  display: flex;
++  align-items: center;
++  flex-direction: column; 
++  justify-content: center;
++  padding: 20px;
++  background: url("https://sakuranouta.biz/wp-content/uploads/2023/11/%E6%B8%A9%E6%B3%89_1_%E3%82%A2%E3%83%BC%E3%83%88%E3%83%9C%E3%83%BC%E3%83%89-1.jpg") no-repeat center center;
++}
++
++.current-avatar-container {
++  cursor: pointer;
++  display: flex;
++  flex-direction: column;
++  align-items: center;
++  margin: 10px 0;
++}
++
++.current-avatar {
++  width: 100px;
++  height: 100px;
++  border-radius: 50%;
++  object-fit: cover;
++  overflow: hidden;
++}
++
++.remove-avatar {
++  display: flex;
++  align-items: center;
++  justify-content: center;
++  white-space: nowrap;
++}
++
++.remove-avatar-checkbox {
++  margin-right: 5px;
++  margin-top: 9px;
++}
++
++.remove-avatar label {
++  font-size: 14px;
++  line-height: 1;
++}
+diff --git a/app/controllers/users_controller.rb b/app/controllers/users_controller.rb
+index 3865ea5..f2fc114 100644
+--- a/app/controllers/users_controller.rb
++++ b/app/controllers/users_controller.rb
+@@ -3,6 +3,20 @@ class UsersController < ApplicationController
+     @user = User.find(params[:id])
+   end
+ 
++  def update
++    @user = User.find(params[:id])
++
++    if params[:user][:remove_avatar] == "1"
++      @user.avatar.purge
++    end
++
++    if @user.update(params.require(:user).permit(:name, :avatar))
++      redirect_to user_path(@user), notice: t('devise.registrations.account_updated')
++    else
++      render 'devise/registrations/edit'
++    end
++  end
++
+   private
+ 
+   def user_params
+diff --git a/app/javascript/application.js b/app/javascript/application.js
+index 68955f3..9187c5f 100644
+--- a/app/javascript/application.js
++++ b/app/javascript/application.js
+@@ -22,3 +22,16 @@ $('.login').on('submit', function(e) {
+     }, 4000);
+   }, 3000);
+ });
++
++$(document).ready(function() {
++  $('.file-input').on('change', function() {
++    var input = this;
++    if (input.files && input.files[0]) {
++      var reader = new FileReader();
++      reader.onload = function(e) {
++        $('.current-avatar-container img').attr('src', e.target.result);
++      };
++      reader.readAsDataURL(input.files[0]);
++    }
++  });
++});
+diff --git a/app/views/devise/registrations/edit.html.erb b/app/views/devise/registrations/edit.html.erb
+index b82e336..0e3e3e1 100644
+--- a/app/views/devise/registrations/edit.html.erb
++++ b/app/views/devise/registrations/edit.html.erb
+@@ -1,43 +1,60 @@
+-<h2>Edit <%= resource_name.to_s.humanize %></h2>
+-
+-<%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f| %>
+-  <%= render "devise/shared/error_messages", resource: resource %>
+-
+-  <div class="field">
+-    <%= f.label :email %><br />
+-    <%= f.email_field :email, autofocus: true, autocomplete: "email" %>
+-  </div>
+-
+-  <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
+-    <div>Currently waiting confirmation for: <%= resource.unconfirmed_email %></div>
+-  <% end %>
+-
+-  <div class="field">
+-    <%= f.label :password %> <i>(leave blank if you don't want to change it)</i><br />
+-    <%= f.password_field :password, autocomplete: "new-password" %>
+-    <% if @minimum_password_length %>
+-      <br />
+-      <em><%= @minimum_password_length %> characters minimum</em>
++<div class="edit-wrapper"> 
++  <div class="device">
++    <%= form_with(model: current_user, url: user_path(current_user), local: true) do |f| %>
++      <p class="title">設定</p>
++
++      <% if guest_user? %>
++        <p>ゲストユーザーは設定を変更できません。</p>
++      <% else %>
++        <% if current_user.errors.any? %>
++          <div class="error-messages">
++            <h2><%= pluralize(current_user.errors.count, "error") %> prohibited this user from being saved:</h2>
++            <ul>
++              <% current_user.errors.full_messages.each do |message| %>
++                <li><%= message %></li>
++              <% end %>
++            </ul>
++          </div>
++        <% end %>
++
++        <%= f.label :current_password, "現在のパスワード" %>
++        <%= f.password_field :current_password, placeholder: "現在のパスワード", required: true %>
++        <i class="fa fa-key"></i>
++
++        <%= f.label :avatar, "アイコンを変更", class: "avatar-label" %>
++        <%= f.file_field :avatar, class: "file-input", style: "display: none;", onchange: "updateImagePreview(this)" %>       
++
++        <div class="current-avatar-container" onclick="document.querySelector('.file-input').click();">
++          <% if current_user.avatar.attached? %>
++            <%= image_tag current_user.avatar, class: "current-avatar" %>
++          <% else %>
++            <%= image_tag 'default_avatar.png', class: "current-avatar", alt: "デフォルトアイコン" %>
++          <% end %>
++          <p>現在のアイコン</p>     
++
++          <% if current_user.avatar.attached? %>
++            <div class="remove-avatar" onclick="event.stopPropagation();">
++              <%= f.check_box :remove_avatar, class: "remove-avatar-checkbox" %>
++              <%= f.label :remove_avatar, "アイコンを削除", onclick: "event.stopPropagation();" %>
++            </div>
++          <% end %>
++        </div>
++
++        <%= f.text_field :name, placeholder: "ユーザー名(20文字まで)", maxlength: 20, required: true %>
++        <i class="fa fa-user"></i>
++
++        <%= f.email_field :email, placeholder: "メールアドレス", required: true %>
++        <i class="fa fa-envelope"></i>
++
++        <%= f.password_field :password, placeholder: "新しいパスワード(6文字以上)", minlength: 6 %>
++        <i class="fa fa-key"></i>
++
++        <%= f.password_field :password_confirmation, placeholder: "新しいパスワード(確認用)" %>
++        <i class="fa fa-key"></i>
++
++        <p class="note">* 変更がある場合、現在のパスワードを入力してください。</p>
++        <%= f.submit "変更を保存", class: "submit-button" %>
++      <% end %>
+     <% end %>
+   </div>
+-
+-  <div class="field">
+-    <%= f.label :password_confirmation %><br />
+-    <%= f.password_field :password_confirmation, autocomplete: "new-password" %>
+-  </div>
+-
+-  <div class="field">
+-    <%= f.label :current_password %> <i>(we need your current password to confirm your changes)</i><br />
+-    <%= f.password_field :current_password, autocomplete: "current-password" %>
+-  </div>
+-
+-  <div class="actions">
+-    <%= f.submit "Update" %>
+-  </div>
+-<% end %>
+-
+-<h3>Cancel my account</h3>
+-
+-<div>Unhappy? <%= button_to "Cancel my account", registration_path(resource_name), data: { confirm: "Are you sure?", turbo_confirm: "Are you sure?" }, method: :delete %></div>
+-
+-<%= link_to "Back", :back %>
++</div>
+-- 
+2.39.3 (Apple Git-145)
+
